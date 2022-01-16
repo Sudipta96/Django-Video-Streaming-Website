@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %} Catagory List {% endblock %}
+{% block css %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="row px-3">
+      {% if messages %}
+      {% for message in messages %}
+       <div class="col-10 alert alert-{{ message.tags }} text-center mx-auto">
+        {{ message}}
+      </div>
+        {% endfor %}
+        {% endif %}
+
+      {% for catagory in catagory_list %}
+        <div class="col-3">
+            <div class="image">
+              <a href="{% url 'core:catagory_detail' catagory_name=catagory.name %}">
+               <img src="{{ catagory.avatar.url }}" alt="" width="300" height="163">
+                <div class="centered font-weight-bold">{{ catagory.name }}</div>
+              </a>
+            </div>
+
+          <div class="row mt-2">
+            <div class="col-12">
+              <a href="{% url 'core:catagory_detail' catagory_name=catagory.name %}">
+                <p class="mb-0 text-center font-weight-bold">{{ catagory.name }}</p>
+              </a>
+              <p class="text-monospace ml-2 mr-3">
+                <a href="{% url 'core:catagory_detail' catagory_name=catagory.name %}">
+                  <span class="">{{ catagory.videos_count}} Video{{ catagory.videos_count|pluralize}}</span>
+                </a>
+                {% if catagory in fav_cat_list %}
+                <span class="float-right">{{ catagory.favourite.count }}
+                  <a href="{% url 'account:add_favourite' catagory_id=catagory.id %}">
+                    <i id="favourite" class="icon-heart fas fa-heart icon-c"></i>
+                  </a>
+                </span>
+                {% else %}
+                <span class="float-right">{{ catagory.favourite.count }}
+                  <a href="{% url 'account:add_favourite' catagory_id=catagory.id %}">
+                    <i class="icon-heart fas fa-heart icon-a"></i>
+                  </a>
+                </span>
+                {% endif %}
+              </p>
+            </div>
+          </div>
+        </div>
+
+      {% endfor %}
+
+   </div>
+</div>
+<script>
+// like video
+$(document).on('click', '#like-button', function (e) {
+  e.preventDefault();
+  $.ajax({
+    type: 'POST',
+    url: '{% url "account:like" %}',
+    data: {
+      videoid: $('#like-button').val(),
+      csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+      action: 'post'
+    },
+    success: function (json) {
+      document.getElementById("like_count").innerHTML = json['result']
+    },
+    error: function (xhr, errmsg, err) {
+
+    }
+  });
+})
+
+</script>
+{% endblock %}

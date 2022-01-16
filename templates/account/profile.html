@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load hitcount_tags %}
+{% block title %}Profile . Prisma{% endblock %}
+{% block css %}
+{% endblock %}
+
+{% block content %}
+
+<div class="bg">
+  <img src="{% static 'images/default_cover_image1.jpg' %}" width="100%" height="300px" alt="">
+  <div class="profile_pic text-light">
+  <img src="{{ profile.profile_pic.url }}" width="150px" height="150px" class="rounded-circle" style="border:4px solid white;" alt="">
+  </div>
+  <div class="channel_name text-center">
+    <h1 class="text-light font-weight-bold">{{ profile.channel_name}}</h1>
+  </div>
+</div>
+
+  <div class="container-fluid py-5">
+    <div class="row text-center pb-3">
+      <div class="col-12">
+        {% if messages %}
+        {% for message in messages %}
+         <div class="col-6 alert alert-{{ message.tags }} text-center mx-auto">
+          {{ message}}
+        </div>
+          {% endfor %}
+          {% endif %}
+      </div>
+      <div class="col">
+        <h1 class="text-center">Content<hr class="content text-center">
+        </h1>
+      </div>
+    </div>
+
+    <div class="row px-3 py-3">
+      {% for video in video_list %}
+        <div class="col-3">
+          <a href="{% url 'core:video_detail' video_slug=video.slug %}">
+            <div class="image">
+              <img src="{{ video.thumbnail.url }}" alt="" width="300" height="163">
+              <div class="bottom-right bg-dark text-light mr-2 px-1">{{ video.get_duration }}</div>
+              <div class="centered"><i class="fas fa-play fa-2x"></i></div>
+            </div>
+          </a>
+
+          <div class="row d-flex align-self-center mt-2">
+            <div class="col-2">
+              <img src="{{ video.user.user_profile.profile_pic.url }}" class="rounded-circle" alt="" width="35" height="35">
+            </div>
+            <div class="col-9 pl-2 pr-0">
+              <a href="{% url 'core:video_detail' video_slug=video.slug %}">
+                <p class="mb-0 text-dark">{{ video.title }}</p>
+              </a>
+              <div class="row">
+                <div class="col-9">
+                  <p class="text-monotspace my-1">
+                    <a href="{% url 'account:profile' profile_id=profile.id %}"><small style="font-size:14px">{{ video.user.user_profile.channel_name }}</small></a>
+                  </p>
+                </div>
+                {% if request.user == video.user %}
+                <div class="col-3 float-right pr-0">
+                  <div class="btn-group dropup float-right" style="margin-top:-5px;">
+                    <button type="button" class="btn btn-link btn-outline-light float-right rounded-circle dropdown" data-toggle="dropdown">
+                      <i class="fas fa-ellipsis-v"></i>
+                    </button>
+
+                    <div class="dropdown-menu">
+                        <a href="{% url 'core:edit_content' video_slug=video.slug video_id=video.id %}" class="dropdown-item">Edit</a>
+                        <a href="{% url 'core:delete_content' video_slug=video.slug video_id=video.id %}" class="dropdown-item">Delete</a>
+                    </div>
+                 </div>
+                </div>
+                {% endif %}
+              </div>
+
+              <p class="text-monospace text-muted">{% get_hit_count for video %} Views<span class="float-right">{{ video.created|date:"M d,Y" }}</span></p>
+            </div>
+          </div>
+        </div>
+
+      {% endfor %}
+
+    </div>
+
+  </div>
+
+
+{% endblock %}

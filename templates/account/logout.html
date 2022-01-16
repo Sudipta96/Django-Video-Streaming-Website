@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% block title %}Logout . Prisma{% endblock %}
+{% block css %}
+<style>
+
+.card{
+  width: 650px;
+}
+</style>
+{% endblock %}
+{% block content %}
+   <div class="container">
+      <div class="row py-2 align-items-center">
+        <div class="col-8 mx-auto">
+          <div class="card ">
+            <div class="card-body">
+              <h2>You have been logged out</h2>
+              <small class="text-muted">
+                <a href="{% url 'account:login' %}" class="ml-1">Log In Again</a>
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+  </div>
+{% endblock %}

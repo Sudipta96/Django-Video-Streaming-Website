@@ -1,0 +1,550 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load date_filter %}
+{% load hitcount_tags %}
+{% block css %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="row mx-2">
+      <div class="col-8">
+        <div class="div mb-3">
+          <video width='800' height="450" controls>
+            <source src="{{ video.file.url }}">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+        <h4>{{ video.title }}</h4>
+
+        <div class="row">
+          <div class="col-9">
+            <p class="text-muted">{% get_hit_count for video %} views . {{ video.created|date:"M d,Y" }}</p>
+          </div>
+         <div class="col-2 text-center">
+           {% if request.user.is_authenticated %}
+           <button class="btn btn-link p-0 border-0 btn-outline-light" id="like-button" value="{{video.id}}">
+             <i class="fas fa-thumbs-up mr-2 text-secondary"></i>
+           </button>
+
+           <span class="mr-2" id="like_count">{{ video.like_count}}</span>
+
+           <button class="btn btn-link p-0 border-0 btn-outline-ligh" id="dislike-button" value="{{video.id}}">
+             <i class="fas fa-thumbs-down mr-2 text-secondary"></i>
+           </button>
+           <span class="mr-2" id="dislike_count">{{ video.dislike_count }}</span>
+
+           {% else %}
+           <a href="{% url 'account:login' %}?next={{request.path}}" class="btn btn-link p-0 border-0 btn-outline-light">
+             <i class="fas fa-thumbs-up mr-2 text-secondary"></i>
+           </a>
+           <span class="mr-2" id="like_count">{{ video.like_count}}</span>
+
+           <a href="{% url 'account:login' %}?next={{request.path}}" class="btn btn-link p-0 border-0 btn-outline-light">
+             <i class="fas fa-thumbs-down mr-2 text-secondary"></i>
+           </a>
+           <span class="mr-2" id="dislike_count">{{ video.dislike_count }}</span>
+           {% endif %}
+
+
+           <!-- <a href="" class="text-muted"><i class="fa fa-like">23</i></a>
+           <a href="" class="text-muted">Dislike 554</a> -->
+         </div>
+        <hr class="mt-0">
+      </div>
+
+        <div class="row">
+          <div class="col-1">
+            <img src="{{ video.user.user_profile.profile_pic.url }}" class="rounded-circle" width="48" height="48" alt="">
+          </div>
+          <div class="col-10 pl-0 d-flex align-self-center">
+            <div class="col-3 pl-0">
+              <p class=""><a href="{% url 'account:profile' profile_id=video.user.user_profile.id %}">{{ video.user.user_profile.channel_name }}</a><br>
+                <small class="text-muted" id="follower_count">{{ follower_count }} follower </small>
+              </p>
+            </div>
+            <div class="col-9 ml-auto">
+              <!-- <a href="" class="float-right btn btn-info">Follow</a> -->
+                {% if user.is_authenticated %}
+                  {% if request.user != video.user %}
+                     {% if following_channel_list %}
+                       {% if profile.user.id in following_channel_list %}
+                         <button class="float-right btn btn-info" id="follow-button" value="{{video.user.id}}">
+                           Following
+                         </button>
+                       {% else %}
+                         <button class="float-right btn btn-info" id="follow-button" value="{{video.user.id}}">
+                            Follow
+                         </button>
+                       {% endif %}
+                     {% else %}
+                       <button class="float-right btn btn-info" id="follow-button" value="{{video.user.id}}">
+                          Follow
+                       </button>
+                    {% endif %}
+                  {% endif %}
+                {% else %}
+                  <a href="{% url 'account:login' %}?next={{request.path}}" class="float-right btn btn-info">Follow</a>
+                {% endif %}
+
+            </div>
+          </div>
+            <div class="col-12">
+              <p class="text-dark">{{ video.description }}</p>
+          </div>
+        </div>
+        <hr class="mt-0">
+
+        <!-- comment section -->
+        <div class="row">
+          <div class="col pb-3">
+            <h5>{{ video.comments.count }} comment{{ video.comments.count|pluralize }}</h5> <br>
+          </div>
+
+           <!-- Add commment -->
+           <!--  Traversing the Tree Structure  -->
+           <div class="col-12">
+           {% load mptt_tags %}
+             <!-- <p>{{comments.count}} comment{{comments|pluralize}} </p> -->
+              <div>
+               <form action="{% url 'comment:post_comment' video.id %}" method="POST">
+               {% csrf_token %}
+                   <div class="form-group">
+
+                       <div>
+                           <!-- {{ form.media }} -->
+                           {{ comment_form }}
+                       </div>
+                   </div>
+                  {% if request.user.is_authenticated %}
+                   <button type="submit" class="btn btn-primary ">Add comment</button>
+                   {% else %}
+                   <a href="{% url 'account:login' %}?next={{request.path}}" class="btn btn-primary">Add Comment</a>
+                  {% endif %}
+                 </form>
+             </div>
+
+             <div class="row py-3">
+               {% if messages %}
+               {% for message in messages %}
+                <div class="col-12 alert alert-{{ message.tags }} text-center mx-auto">
+                 {{ message}}
+               </div>
+                 {% endfor %}
+                 {% endif %}
+             <!-- <! - Traversing the Tree Structure - > -->
+             {% recursetree comments %}
+               <!-- <! - Give node an individual name comment - >. -->
+               {% with comment=node %}
+                   <div class="{% if comment.reply_to %}
+                               offset-1 col-11
+                               {% else %}
+                               col-12
+                               {% endif %}">
+                       <hr>
+                       <p class="mb-0">
+                          <img src="{{ comment.user.user_profile.profile_pic.url }}" width="35" height="35" class="rounded-circle mr-2" alt="">
+                           <strong class="text-primary">
+                               {{ comment.user }}
+                            {% if not comment.reply_to %}
+
+                               {% if not comment.status %}
+                               <span class="text-secondary" style="font-size:14px">
+                                 . {{ comment.updated|timesince|upto:',' }} ago . [Edited]
+                               </span>
+                               {% else %}
+                               <span class="text-secondary" style="font-size:14px">
+                                 . {{ comment.created|timesince|upto:',' }} ago
+                               </span>
+                               {% endif %}
+
+                            {% endif %}
+                           </strong>
+
+
+                           {% if comment.reply_to %}
+                               <i class="far fa-arrow-alt-circle-right"
+                                  style="color: cornflowerblue;font-size: 14px;"></i>
+
+                              {% if not comment.status %}
+                                  <strong class="text-secondary" style="font-size:14px">
+                                  {{ comment.reply_to }} . {{ comment.updated|timesince|upto:',' }} ago . [Edited]
+                                  </strong>
+
+                              {% else %}
+                                  <strong class="text-secondary" style="font-size:14px">
+                                       {{ comment.reply_to }} . {{ comment.created|timesince|upto:',' }} ago
+                                 </strong>
+                              {% endif %}
+
+                           {% endif %}
+                       </p>
+                       <div class="ml-5">{{ comment.content|safe }}</div>
+
+
+                       <div class="row">
+                       <!-- <! - moda9l button - > -->
+                         <!-- <button type="button"
+                                 class="btn btn-light btn-sm text-muted"
+                                 onclick="load_modal({{ video.id }}, {{ comment.id }})">
+                             Reply
+                         </button> -->
+                      <div class="col-6 ml-5">
+                        {% if user.is_authenticated %}
+                          <button class="btn btn-link text-secondary p-0 border-0 btn-outline-light" id="upvote-button" data-upvoteid = "{{comment.id}}"
+                          value="{{ comment.id }}">
+                           <i class="fas fa-thumbs-up mr-1 text-secondary"></i>
+                          </button>
+                          <span class="text-secondary" id="upvote_count_{{comment.id}}" data-upvotecount = "{{comment.id}}">{{ comment.upvote_count}}</span>
+                          <button class="btn btn-link text-secondary p-0 border-0 btn-outline-light" id="downvote-button" data-downvoteid = "{{comment.id}}"
+                           value="{{ comment.id }}">
+                           <i class="fas fa-thumbs-down ml-1 mr-1"></i>
+                          </button>
+                          <span class="text-secondary" id="downvote_count_{{comment.id}}">{{ comment.downvote_count}}</span>
+                          <a href="#" class="button text-secondary ml-1" style="font-size:15px" onclick="load_modal({{ video.id }}, {{ comment.id }})">REPLY</a>
+                        {% else %}
+                          <a href="{% url 'account:login' %}?next={{request.path}}" class="btn btn-link text-secondary p-0 border-0 btn-outline-light">
+                            <i class="fas fa-thumbs-up mr-1 text-secondary"></i>
+                          </a>
+                          <span class="" id="upvote_count" data-upvotecount = "{{comment.id}}">{{ comment.upvote_count}}</span>
+                          <a href="{% url 'account:login' %}?next={{request.path}}" class="btn btn-link text-secondary p-0 border-0 btn-outline-light">
+                            <i class="fas fa-thumbs-down ml-1 mr-1"></i>
+                          </a>
+                          <span class="" id="downvote_count">{{ comment.downvote_count}}</span>
+                          <a href="{% url 'account:login' %}?next={{request.path}}" class="button text-secondary ml-1" style="font-size:15px">REPLY</a>
+                        {% endif %}
+                      </div>
+                      <!-- edit and delete button -->
+                        {% if request.user == comment.user %}
+                        <div class="col-3">
+                          <div class="btn-group dropup float-right{% if comment.reply_to %} mr-2{% endif %}" style="margin-top:-5px;">
+                            <button type="button" class="btn btn-link btn-outline-light rounded-circle dropdown" data-toggle="dropdown">
+                              <i class="fas fa-ellipsis-v"></i>
+                            </button>
+
+                            <div class="dropdown-menu">
+                                <a href="#" class="button dropdown-item" onclick="edit_load_modal({{ video.id }},{{ comment.id }})">Edit</a>
+                                <a href="{% url 'comment:delete_comment' slug=video.slug comment_id=comment.id %}" class="dropdown-item" onclick="return confirm('Delete This Comment?')">Delete</a>
+                            </div>
+                         </div>
+                       </div>
+                       {% endif %}
+                        <!-- end of edit button -->
+
+                     </div>
+
+                       {% if comment.rght != 2 and comment.level == 0 and comment.get_children.count > 1 %}
+                         <br>
+                         <div class="buttons ml-5">
+                           <button class="btn btn-primary d-block" id ="show-{{comment.id}}" type="button" data-toggle="collapse"  data-target="#{{comment.id}}"
+                           aria-expanded="false" aria-controls="collapseExample" onClick = "myFunction1({{ comment.id }}, {{ comment.get_children.count }} );">
+                           <!-- onClick = "this.style.visibility='hidden'"; -->
+                             View {{ comment.get_children.count }} replies
+                           </button>
+                           <button class="btn btn-primary d-none"  id ="hide-{{comment.id}}" type="button" data-toggle="collapse" data-target="#{{comment.id}}"
+                           aria-expanded="false" aria-controls="collapseExample">
+                                  Button with data-target
+                           </button>
+                         </div>
+
+                        {% else %}
+                        <div class="" id="{{ comment.id }}">
+                            {% if not comment.is_leaf_node %}
+                                <div class=" children">
+                                   {{ children.tree_id}}
+                                    {{ children }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+
+                       {% endif %}
+
+                        <!-- edit Reply  Comment Modal -->
+                   <div class="modal fade" id="model_{{comment.id}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                     <div class="modal-dialog" role="document">
+                       <div class="modal-content">
+                         <div class="modal-header">
+                           {% if comment.reply_to %}
+                           <h5 class="modal-title" id="exampleModalLabel">Reply to {{ comment.reply_to }}:</h5>
+                           {% else %}
+                           <h5 class="modal-title" id="exampleModalLabel">Update Message:</h5>
+                           {% endif %}
+                           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                             <span aria-hidden="true">&times;</span>
+                           </button>
+                         </div>
+                         <div class="modal-body" id="model_body_{{ comment.id }}"></div>
+
+                         <div class="modal-footer">
+                           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                       <!-- end of reply comment modal -->
+
+                       <!-- Modal -->
+                       <div class="modal fade"
+                            id="comment_{{ comment.id }}"
+                            tabindex="-1"
+                            role="dialog"
+                            aria-labelledby="CommentModalCenter"
+                            aria-hidden="true">
+                           <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                               <div class="modal-content" style="height:480px">
+                                   <div class="modal-header">
+                                       <h5 class="modal-title" id="exampleModalCenterTitle">Reply to {{ comment.user }}：</h5>
+                                       <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                       </button>
+                                   </div>
+
+                                   <div class="modal-body" id="modal_body_{{ comment.id }}"></div>
+                               </div>
+
+                          </div>
+                       </div>
+
+                       <!-- hide and view replies -->
+                       <div class="collapse" id="{{ comment.id }}">
+                           {% if not comment.is_leaf_node %}
+                               <div class=" children">
+                                  {{ children.tree_id}}
+                                   {{ children }}
+                               </div>
+                           {% endif %}
+                       </div>
+
+                   </div>
+
+               {% endwith %}
+             {% endrecursetree %}
+             </div>
+             <hr>
+           </div>
+           <!-- End of comment -->
+
+        </div>
+
+        <!-- endof comment section -->
+      </div>
+
+      <div class="col-4">
+        {% for video in related_videos %}
+        <div class="col-12 d-flex mb-4">
+          <a href="{% url 'core:video_detail' video_slug=video.slug %}">
+            <div class="image">
+              <img src="{{ video.thumbnail.url }}" width="168" height="94" alt="">
+              <div class="bottom-right bg-dark text-light mr-2 px-1">{{ video.get_duration }}</div>
+              <div class="centered"><i class="fas fa-play fa-2x"></i></div>
+            </div>
+          </a>
+             <div class="ml-2">
+               <a href="{% url 'core:video_detail' video_slug=video.slug %}">
+                <p class="mb-0">{{ video.title }}</p>
+               </a>
+               <a href="{% url 'account:profile' profile_id=video.user.user_profile.id %}">
+                 <small class="">{{ video.user.user_profile.channel_name }}</small>  <br>
+               </a>
+               <a href="{% url 'core:video_detail' video_slug=video.slug %}">
+                <small class="text-muted">{% get_hit_count for video %} views . {{ video.created|date:"M d,Y"}}</small>
+               </a>
+             </div>
+        </div>
+
+        {% endfor %}
+      </div>
+     </div>
+  </div>
+
+
+<script>
+// like video
+$(document).on('click', '#like-button', function (e) {
+  e.preventDefault();
+  $.ajax({
+    type: 'POST',
+    url: '{% url "account:like" %}',
+    data: {
+      videoid: $('#like-button').val(),
+      csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+      action: 'post'
+    },
+    success: function (json) {
+      document.getElementById("like_count").innerHTML = json['result']
+    },
+    error: function (xhr, errmsg, err) {
+
+    }
+  });
+})
+
+// Follow/UnFollow
+$(document).on('click', '#follow-button', function (e) {
+  e.preventDefault();
+  $.ajax({
+    type: 'POST',
+    url: '{% url "account:follow" %}',
+    data: {
+      video_user: $('#follow-button').val(),
+      csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+      action: 'post'
+    },
+    success: function (json) {
+        if (json['result'] < 2)
+        {
+          document.getElementById("follower_count").innerHTML = json['result'] + ' follower ';
+        }
+        else{
+          document.getElementById("follower_count").innerHTML = json['result'] + ' followers ';
+        }
+      if(document.getElementById("follow-button").innerText != 'Following'){
+        document.getElementById("follow-button").innerText = 'Following';
+      }
+      else{
+        document.getElementById("follow-button").innerText = 'Follow';
+      }
+    },
+    error: function (xhr, errmsg, err) {
+
+    }
+  });
+})
+// dislike videos
+$(document).on('click', '#dislike-button', function (e) {
+  e.preventDefault();
+  $.ajax({
+    type: 'POST',
+    url: '{% url "account:dislike" %}',
+    data: {
+      videoid: $('#dislike-button').val(),
+      csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+      action: 'post'
+    },
+    success: function (json) {
+      document.getElementById("dislike_count").innerHTML = json['result']
+    },
+    error: function (xhr, errmsg, err) {
+
+    }
+  });
+})
+
+
+function myFunction1(comment_id, comment_get_children_count) {
+ var id = comment_id;
+ var count = comment_get_children_count
+ console.log(id);
+ console.log(count);
+ var x = document.getElementById("show-" + id );
+ console.log(x);
+ var y = "View " + count + " replies";
+ var z = "Hide " + count + " replies";
+
+ if (x.innerHTML.trim() != z){
+  x.innerHTML = z;
+  console.log(x.innerHTML);
+}
+else {
+ x.innerHTML = y;
+ console.log(x.innerHTML);
+}
+
+}
+
+// upvote
+
+$(document).on('click', '#upvote-button', function (e) {
+  e.preventDefault();
+
+  var commentid = $(this).attr("data-upvoteid");
+  console.log("comment_id" + commentid);
+  var upvote_count = 'upvote_count_' + commentid;
+  console.log("upvote_count:" + upvote_count);
+  var selector = $(this);
+  $.ajax({
+    type: 'POST',
+    url: '{% url "account:upvote" %}',
+    data: {
+      commentid: $(this).attr("data-upvoteid"),
+      csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+      action: 'post'
+    },
+    success: function (json) {
+
+    console.log(json);
+    // selector.find('span').text(json['result']);
+    document.getElementById(upvote_count).innerText = json['result'];
+
+    },
+    error: function (xhr, errmsg, err) {
+
+    },
+  });
+})
+
+
+// downvote
+$(document).on('click', '#downvote-button', function (e) {
+  e.preventDefault();
+
+  var commentid = $(this).attr("data-downvoteid");
+  var downvote_count = 'downvote_count_' + commentid;
+  console.log("downvote_count:" + downvote_count);
+
+  var selector = $(this);
+
+  $.ajax({
+    type: 'POST',
+    url: '{% url "account:downvote" %}',
+    data: {
+      commentid: $(this).attr("data-downvoteid"),
+      csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+      action: 'post'
+    },
+    success: function (json) {
+        console.log(json);
+        // selector.find('span').text(json['result']);
+        document.getElementById(downvote_count).innerText = json['result'];
+
+    },
+    error: function (xhr, errmsg, err) {
+
+    }
+  });
+})
+
+// Load modal
+   function load_modal(video_id, comment_id) {
+       let modal_body = '#modal_body_' + comment_id;
+       let modal_id = '#comment_' + comment_id;
+
+       // Load Editor
+       if ($(modal_body).children().length === 0) {
+           let content  =  '<iframe src="/comment/post-comment/'  +
+                video_id  + '/'  + comment_id  + '" frameborder="0" style="width: 100%; height: 100%;"></iframe>' ;
+           $(modal_body).append(content);
+       };
+
+       $(modal_id).modal('show');
+   }
+
+   function edit_load_modal(video_id, comment_id) {
+       let modal_body = '#model_body_' + comment_id;
+       let modal_id = '#model_' + comment_id;
+       console.log(video_id)
+       console.log(modal_id)
+       // Load Editor
+       if ($(modal_body).children().length === 0) {
+           console.log("Hi I am inside")
+           let content  =  '<iframe src="/edit-comment/' + video_id +
+                  '/' + comment_id  + '/' + '" frameborder="0" style="width: 100%; height: 100%;"></iframe>' ;
+           $(modal_body).append(content);
+       };
+
+       $(modal_id).modal('show');
+   }
+</script>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% block title %}Delete Content . Prisma{% endblock %}
+{% block css %}{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="row align-items-center">
+    <div class="col text-center">
+      <div class="card">
+        <form action="." method="POST" class="py-3">
+           {% csrf_token %}
+           <h4 class="py-2">Are you sure you want to delete "{{ video.title }}"?</h4>
+           <button type="submit" class="btn btn-danger mx-2">Delete</button>
+           <a href="{% url 'account:profile' profile_id=video.user.user_profile.id %}" class="btn btn-primary mx-2"> Cancel </a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load date_filter %}
+{% load hitcount_tags %}
+{% block title %}Search . Result{% endblock %}
+{% block css %}
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+  {% if query %}
+          {% if profiles or search_videos %}
+            <h5 class="text-center my-4">Search Results for <span class="text-success">"{{ query }}"</span> <hr class="search text-center"></h5>
+            <div class="row">
+              <div class="col-md-9 mx-auto">
+                    <!-- start of profiles -->
+                    {% if profiles %}
+                      {% for profile in profiles %}
+                        <div class="row my-3">
+                          <div class="col-4 text-center">
+                            <a href="{% url 'account:profile' profile_id=profile.id %}">
+                             <img src="{{ profile.profile_pic.url }}" alt="" width="136" height="136" class="rounded-circle">
+                            </a>
+                          </div>
+                          <div class="col-6 py-2 pl-0">
+                            <a href="{% url 'account:profile' profile_id=profile.id %}">
+                              <p class="mb-0" style="font-size:20px;">{{ profile.channel_name }}</p>
+                                <small class="text-secondary">
+                                  <span id="follower_count_{{profile.user_id}}">
+                                  {{ profile.user.follower.count }} follower{{ profile.user.follower.count|pluralize }}
+                                  </span>
+                                  . {{ profile.total_videos }} video{{ profile.total_videos|pluralize }} <br>
+                                  {{ profile.description|truncatechars:120 }}
+                                </small>
+                             </a>
+                          </div>
+                          <div class="col-2 py-5">
+                            <a href="{% url 'account:profile' profile_id=profile.id %}">
+                              {% if not profile.user == request.user %}
+                                 {% if following_channel_list %}
+                                    {% if profile.user.id in following_channel_list %}
+                                     <button class="btn btn-info btn-sm mr-2" id="follow-button" data-followid="{{profile.user.id}}" value="{{ profile.user.id }}">
+                                        <span id="follow_{{profile.user.id}}">Following</span>
+                                     </button>
+                                     {% else %}
+                                     <button class="btn btn-info btn-sm mr-2" id="follow-button" data-followid="{{profile.user.id}}" value="{{ profile.user.id }}">
+                                       <span id="follow_{{profile.user.id}}">Follow</span>
+                                     </button>
+                                    {% endif %}
+                                 {% else %}
+                                    <button class="btn btn-info btn-sm mr-2" id="follow-button" data-followid="{{profile.user.id}}" value="{{ profile.user.id }}">
+                                      <span id="follow_{{profile.user.id}}">Follow</span>
+                                    </button>
+                                 {% endif %}
+                             {% endif %}
+                           </a>
+                          </div>
+                        </div>
+                    {% endfor %}
+                   {% endif %}
+                   <!-- end of profile  -->
+
+                   <!-- start of profile videos -->
+                     {% if profiles %}
+                       {% for profile in profiles %}
+                         {% if profile.videos %}
+                           {% for video in profile.videos %}
+                             <div class="row mb-3">
+                               <div class="col-4 image">
+                                 <a href="{% url 'core:video_detail' video_slug=video.slug %}">
+                                   <img src="{{ video.thumbnail.url }}" alt="" width="246" height="138" class="">
+                                   <div class="search-bottom-right bg-dark text-light mr-4 px-1">{{ video.get_duration }}</div>
+                                   <div class="centered"><i class="fas fa-play fa-2x"></i></div>
+                                </a>
+                               </div>
+                               <div class="col-8 py-2 pl-0">
+                                 <a href="{% url 'core:video_detail' video_slug=video.slug %}">
+                                   <p class="mb-0" style="font-size:20px;">{{ video.title }}</p>
+                                   </a>
+                                   <small class="text-secondary">
+                                     <a href="{% url 'account:profile' profile_id=video.user.user_profile.id %}" class="text-muted">
+                                       {{ video.user.user_profile.channel_name }}</a>.
+                                       <a href="{% url 'core:video_detail' video_slug=video.slug %}">{% get_hit_count for video %} views . {{ video.updated|timesince|upto:',' }} ago</a>
+                                   </small><br>
+                                   <a href="{% url 'core:video_detail' video_slug=video.slug %}">
+                                     <small class="text-secondary">
+                                       {{ video.description|truncatechars:120 }}
+                                     </small>
+                                   </a>
+                               </div>
+
+                             </div>
+                       {% endfor %}
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                  <!-- end of videos  -->
+
+                   <!-- start of profile videos -->
+                   {% if search_videos %}
+                     {% for video in search_videos %}
+                         <div class="row mb-3">
+                             <div class="col-4 image">
+                               <a href="{% url 'core:video_detail' video_slug=video.slug %}">
+                                 <img src="{{ video.thumbnail.url }}" alt="" width="246" height="138" class="">
+                                 <div class="search-bottom-right bg-dark text-light mr-4 px-1">{{ video.get_duration }}</div>
+                                 <div class="centered"><i class="fas fa-play fa-2x"></i></div>
+                              </a>
+                             </div>
+                             <div class="col-8 py-2 pl-0">
+                               <p class="mb-0" style="font-size:20px;">{{ video.title }}</p>
+                                 <small class="text-secondary">
+                                   <a href="{% url 'account:profile' profile_id=video.user.user_profile.id %}">{{ video.user.user_profile.channel_name }} </a>. {% get_hit_count for video %} views . {{ video.updated|timesince|upto:',' }} ago
+                                 </small><br>
+                                 <small class="text-secondary">
+                                   {{ video.description|truncatechars:120 }}
+                                 </small>
+                             </div>
+                         </div>
+                    {% endfor %}
+                  {% endif %}
+                  <!-- end of videos  -->
+
+             </div>
+            </div>
+          {% else %}
+            <div class="row align-items-center" style="height:550px">
+              <div class="col">
+                <h5 class="text-center my-4">No Result Found For <span class="text-danger">"{{ query }}"</span></h5>
+              </div>
+            </div>
+         {% endif %}
+
+  {% endif %}
+
+</div>
+<script>
+// Follow/UnFollow
+$(document).on('click', '#follow-button', function (e) {
+  e.preventDefault();
+  // var video_user =  document.getElementById('follow-button').value;
+  var video_user = $(this).attr("data-followid");
+  console.log(video_user);
+  var follow = 'follow_' + video_user;
+  console.log(follow);
+  // console.log("upvote_count:" + upvote_count);
+  var selector = $(this);
+  $.ajax({
+    type: 'POST',
+    url: '{% url "account:follow" %}',
+    data: {
+      // video_user: $('#follow-button').val(),
+      video_user: $(this).attr("data-followid"),
+      // csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+      action: 'post'
+    },
+    // $('input[name=csrfmiddlewaretoken]').val(),
+    success: function (json) {
+        console.log(json);
+        if (json['result'] < 2)
+        {
+          document.getElementById("follower_count_" + video_user).innerHTML = json['result'] + ' follower ';
+        }
+        else{
+          document.getElementById("follower_count_" + video_user).innerHTML = json['result'] + ' followers ';
+        }
+      if(document.getElementById(follow).innerHTML != 'Following'){
+        document.getElementById(follow).innerHTML = 'Following';
+      }
+      else{
+        document.getElementById(follow).innerHTML = 'Follow';
+      }
+    },
+    error: function (xhr, errmsg, err) {
+
+    }
+  });
+})
+</script>
+
+{% endblock %}

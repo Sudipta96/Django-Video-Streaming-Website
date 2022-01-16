@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load hitcount_tags %}
+{% block css %}
+{% endblock %}
+
+{% block content %}
+
+  <div class="container-fluid py-5">
+      <div class="row px-3">
+        {% for video in video_list %}
+          <div class="col-sm-4 col-xl-3">
+            <a href="{% url 'core:video_detail' video_slug=video.slug %}">
+              <div class="image">
+                <img src="{{ video.thumbnail.url }}" class="img-responsive" alt="" width="300" height="163">
+                <div class="bottom-right bg-dark text-light mr-2 px-1">{{ video.get_duration }}</div>
+                <div class="centered"><i class="fas fa-play fa-2x"></i></div>
+              </div>
+            </a>
+
+            <div class="row d-flex align-self-center mt-2">
+              <div class="col-2">
+                <a href="{% url 'account:profile' profile_id=video.user.user_profile.id %}">
+                  <img src="{{ video.user.user_profile.profile_pic.url }}" class="rounded-circle" alt="" width="35" height="35">
+                </a>
+              </div>
+              <div class="col-9 pl-1">
+                <a href="{% url 'core:video_detail' video_slug=video.slug %}">
+                  <p class="mb-0">{{ video.title }}</p>
+                </a>
+                <p class="text-monospace my-1">
+                  <a href="{% url 'account:profile' profile_id=video.user.user_profile.id %}" style="font-size:14px">{{ video.user.user_profile.channel_name }}</a>
+                    <i class="fas fa-thumbs-up float-right"> {{ video.like_count}}</i>
+                </p>
+                <p class="text-monospace text-muted">{% get_hit_count for video %} views<span class="float-right">{{ video.created|date:"M d,Y" }}</span></p>
+              </div>
+            </div>
+          </div>
+
+        {% endfor %}
+
+     </div>
+  </div>
+
+
+
+<!-- <img src="{{ video.thumbnail.url}}" alt="" width="287" height="163">
+
+<video width='400' controls>
+<source src="{{ video.file.url }}">
+Your browser does not support the video tag.
+</video>
+<br><br> -->
+
+{% endblock content %}
